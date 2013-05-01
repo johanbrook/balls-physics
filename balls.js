@@ -1,231 +1,197 @@
 (function() {
-	var context, 
-		Gravity = 9.82, 
-		FPS = 60, 
-		allBalls = [],
-		timer,
-		width = 700, 
-		height = 300;
+  var Animator, Ball, Point, PolarPoint, config, create_balls, guid, polar_to_rect, s4;
 
-	document.addEventListener('DOMContentLoaded', init);
+  config = {
+    gravity: 9.82,
+    fps: 60,
+    number_of_balls: 2
+  };
 
-	function init() {
-		initializeControls();
-		begin();
-	}
+  document.addEventListener('DOMContentLoaded', function(evt) {
+    var animator, balls, context;
+    context = document.getElementById("canvas");
+    balls = create_balls(config.number_of_balls);
+    animator = new Animator(context, balls);
+    return animator.go();
+  });
 
-	var Ball = function(obj) {
-		this.x = obj.x, 
-		this.y = obj.y, 
-		this.r = obj.r, 
-		this.vx = 0, 
-		this.vy = 0, 
-		this.w = obj.weight,
-		this.color = obj.color;
-	}
+  PolarPoint = (function() {
 
-	Ball.prototype.getCenter = function() {
-		return new Point(this.x+this.r, this.y+this.r);
-	};
+    function PolarPoint(length, angle) {
+      this.length = length;
+      this.angle = angle;
+    }
 
-	Ball.prototype.toPolar = function() {
-		return new PolarPoint(this.getVelocity(), this.getDirection());
-	};
+    return PolarPoint;
 
-	Ball.prototype.isColliding = function(b) {
-		var dx = this.x - b.x;
-		var dy = this.y - b.y;
-		var r = this.r + b.r;
-		
-		return dx*dx + dy*dy < r*r;
-	};
+  })();
 
-	Ball.prototype.getVelocity = function() {
-		return Math.sqrt(this.vx*this.vx + this.vy*this.vy);
-	};
+  Point = (function() {
 
-	Ball.prototype.getDirection = function() {
-		return Math.atan2(this.vy, this.vx);
-	};
+    function Point(x, y) {
+      this.x = x;
+      this.y = y;
+    }
 
-	function draw() {
-		allBalls.forEach(function(ball, _) {
-			context.beginPath();
-			context.fillStyle=ball.color;
-			context.arc(ball.x, ball.y, ball.r, 0, Math.PI*2, true); 
-			context.closePath();
-			context.fill();
-		});
-	};
+    return Point;
 
-	function tick(dt) {
-		allBalls.forEach(function(ball, _) {
-			ball.vy = ball.vy + Gravity * dt;
+  })();
 
-			if(ball.x < ball.r || ball.x > width - ball.r) {
-				ball.vx = ball.vx * -1;
-			}
-			if (ball.y < ball.r || ball.y > height - ball.r) {
-				ball.vy = ball.vy * -1;
-			}
+  create_balls = function(amount) {
+    var num, _results;
+    _results = [];
+    for (num = 1; 1 <= amount ? num <= amount : num >= amount; 1 <= amount ? num++ : num--) {
+      _results.push(new Ball({
+        x: num * 40,
+        y: 30,
+        r: num * 15,
+        w: num * 10,
+        vx: 10 * (-1 * num),
+        vy: 15
+      }));
+    }
+    return _results;
+  };
 
-			allBalls.forEach(function(ball2, _) {
-				if(ball !== ball2 && ball.isColliding(ball2)) {
-					console.log("collide");
+  polar_to_rect = function(length, degrees) {
+    var x, y;
+    x = length * Math.cos(degrees);
+    y = length * Math.sin(degrees);
+    return new Point(x, y);
+  };
 
-					var alpha, u1, u2, d1, d2, u1x, u1y, u2x, u2y, v1x, v1y, v2x, v2y,
-						pp1, pp2, p1, p2;
+  s4 = function() {
+    return Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1);
+  };
 
-					// Calculate collision angle
-					alpha = Math.atan2(ball.y - ball2.y, ball.x - ball2.x);
-					
-					// Get the total velocity and direction for the balls,
-					// i.e. the polar coordinate components length and angle.
-					pp1 = ball.toPolar();
-					pp2 = ball2.toPolar();
-					u1 = pp1.len;
-					u2 = pp2.len;
-					d1 = pp1.angle;
-					d2 = pp2.angle;
-					
-					// Compute new coordinate system from the magnitude
-					// and direction/collision angle of the balls.
-					p1 = polarToRect(u1, d1-alpha);
-					p2 = polarToRect(u2, d2-alpha);
+  guid = function() {
+    return s4() + s4() + '-' + s4() + '-' + s4() + '-' + s4() + '-' + s4() + s4() + s4();
+  };
 
-					u1x = p1.x;
-					u1y = p1.y;
-					u2x = p2.x;
-					u2y = p2.y;
+  Animator = (function() {
 
-					var center = ball2.getCenter();
-					console.log(alpha);
-					
-					// Now we are in the new coordinate system where the collision
-					// will behave as in 1D, i.e. the balls are colliding in front
-					// of each other (their direction is the normal line between them).
-					
-					// Solve the velocities along the new x-axis. 
-					v1x = (u1x*(ball.w-ball2.w) + 2*ball2.w*u2x) / (ball.w+ball2.w);
-					v2x = (u2x*(ball2.w-ball.w) + 2*ball.w*u1x) / (ball.w+ball2.w);
-					
-					// The velocities along the y-axis are unchanged.
-					v1y = u1y;
-					v2y = u2y;
+    function Animator(canvas, balls) {
+      var _ref;
+      this.balls = balls;
+      this.canvas = canvas.getContext("2d");
+      _ref = [canvas.width, canvas.height], this.width = _ref[0], this.height = _ref[1];
+      this.timer = null;
+    }
 
-					// Convert back to Cartesian coords. PI / 2 is for shifting the direction
-					// 90 degrees, since the X and Y axis are perpendicular. 
-					ball.vx = Math.cos(alpha) * v1x + Math.cos(alpha + Math.PI / 2) * v1y;
-					ball.vy = Math.sin(alpha) * v1x + Math.sin(alpha + Math.PI / 2) * v1y;
-					
-					ball2.vx = Math.cos(alpha) * v2x + Math.cos(alpha + Math.PI / 2) * v2y;
-					ball2.vy = Math.sin(alpha) * v2x + Math.sin(alpha + Math.PI / 2) * v2y;
-				}
-			});
+    Animator.prototype.go = function() {
+      var interval,
+        _this = this;
+      interval = 1000 / config.fps;
+      return this.timer = setInterval(function() {
+        var dt;
+        _this.canvas.clearRect(0, 0, _this.width, _this.height);
+        dt = 1 / interval;
+        _this.tick(dt);
+        return _this.draw();
+      }, interval);
+    };
 
-			ball.x += ball.vx * dt;
-			ball.y += ball.vy * dt;
-		});
-	}
+    Animator.prototype.stop = function() {
+      clearInterval(this.timer);
+      return this.timer = null;
+    };
 
-	function animate(balls) {
-		timer = setInterval(function() {
-			context.clearRect(0,0, width, height);
+    Animator.prototype.draw = function() {
+      var _this = this;
+      return this.balls.forEach(function(ball) {
+        _this.canvas.beginPath();
+        _this.canvas.fillStyle = ball.color;
+        _this.canvas.arc(ball.x, ball.y, ball.r, 0, Math.PI * 2, true);
+        _this.canvas.closePath();
+        return _this.canvas.fill();
+      });
+    };
 
-			balls.forEach(function(ball, _) {
-				var dt = 1/(1000/FPS);
-				tick(dt);
-				draw();
-			});
-		}, 1000/FPS);
-	}
+    Animator.prototype.tick = function(dt) {
+      var _this = this;
+      console.log("In tick");
+      return this.balls.forEach(function(ball) {
+        ball.vy = ball.vy + config.gravity * dt;
+        if (ball.x < ball.r || ball.x > _this.width - ball.r) {
+          ball.vx = ball.vx * -1;
+        }
+        if (ball.y < ball.r || ball.y > _this.height - ball.r) {
+          ball.vy = ball.vy * -1;
+        }
+        _this.balls.forEach(function(other_ball) {
+          var alpha, center, d1, d2, p1, p2, pp1, pp2, u1, u1x, u1y, u2, u2x, u2y, v1x, v1y, v2x, v2y;
+          if (ball.id !== other_ball.id && ball.is_colliding_with(other_ball)) {
+            alpha = Math.atan2(ball.y - other_ball.y, ball.x - other_ball.x);
+            pp1 = ball.to_polar_point();
+            pp2 = other_ball.to_polar_point();
+            u1 = pp1.length;
+            u2 = pp2.length;
+            d1 = pp1.angle;
+            d2 = pp2.angle;
+            p1 = polar_to_rect(u1, d1 - alpha);
+            p2 = polar_to_rect(u2, d2 - alpha);
+            u1x = p1.x;
+            u1y = p1.y;
+            u2x = p2.x;
+            u2y = p2.y;
+            center = other_ball.get_center();
+            v1x = (u1x * (ball.w - other_ball.w) + 2 * other_ball.w * u2x) / (ball.w + other_ball.w);
+            v2x = (u2x * (other_ball.w - ball.w) + 2 * ball.w * u1x) / (ball.w + other_ball.w);
+            v1y = u1y;
+            v2y = u2y;
+            ball.vx = Math.cos(alpha) * v1x + Math.cos(alpha + Math.PI / 2) * v1y;
+            ball.vy = Math.sin(alpha) * v1x + Math.sin(alpha + Math.PI / 2) * v1y;
+            other_ball.vx = Math.cos(alpha) * v2x + Math.cos(alpha + Math.PI / 2) * v2y;
+            return other_ball.vy = Math.sin(alpha) * v2x + Math.sin(alpha + Math.PI / 2) * v2y;
+          }
+        });
+        return ball.move(dt);
+      });
+    };
 
-	function rectToPolar(x, y) {
-		var length = Math.sqrt(x*x + y*y);
-		var degrees = Math.atan2(y, x);
-			
-		return new PolarPoint(length, degrees);
-	}
-		
-	function rectToPolar(p) {
-		return rectToPolar(p.x, p.y);
-	}
+    return Animator;
 
-	function polarToRect(length, degrees) {
-		x = length * Math.cos(degrees);
-		y = length * Math.sin(degrees);
-			
-		return new Point(x, y);
-	}
+  })();
 
-	// Help classes
- 	function PolarPoint(length, angle) {
- 		this.len = length;
- 		this.angle = angle;
- 	}
+  Ball = (function() {
 
- 	function Point(x, y) {
- 		this.x = x;
- 		this.y = y;
- 	}
+    function Ball(params) {
+      var _ref;
+      _ref = [params.x, params.y, params.r, params.w, params.color || 'red', params.vx || 0, params.vy || 0], this.x = _ref[0], this.y = _ref[1], this.r = _ref[2], this.w = _ref[3], this.color = _ref[4], this.vx = _ref[5], this.vy = _ref[6];
+      this.id = guid();
+    }
 
- 	function initializeControls() {
- 		var start = document.getElementById("start"),
- 			stop = document.getElementById("stop"),
- 			restart = document.getElementById("restart");
+    Ball.prototype.get_center = function() {
+      return new Point(this.x + this.r, this.y + this.r);
+    };
 
- 		stop.setAttribute("disabled", true);
- 		restart.setAttribute("disabled", true);
- 		
- 		start.addEventListener("click", function(evt) {
- 			animate(allBalls);
+    Ball.prototype.get_velocity = function() {
+      return Math.sqrt(this.vx * this.vx, this.vy * this.vy);
+    };
 
- 			stop.removeAttribute("disabled");
- 			restart.removeAttribute("disabled");
- 			this.setAttribute("disabled", true);
- 		}, false);
+    Ball.prototype.get_direction = function() {
+      return Math.atan2(this.vy, this.vx);
+    };
 
- 		stop.addEventListener("click", function(evt) {
- 			clearInterval(timer);
- 			timer = null;
- 			this.setAttribute("disabled", true);
- 			start.removeAttribute("disabled");
- 		}, false);
+    Ball.prototype.to_polar_point = function() {
+      return new PolarPoint(this.get_velocity(), this.get_direction());
+    };
 
- 		restart.addEventListener("click", function(evt) {
- 			cleanUp();
- 			begin();
- 			start.removeAttribute("disabled");
- 		}, false);
- 	}
+    Ball.prototype.move = function(dt) {
+      this.x += this.vx * dt;
+      return this.y += this.vy * dt;
+    };
 
- 	function cleanUp() {
- 		clearInterval(timer);
- 		timer = null;
- 		allBalls = [];
- 		context.clearRect(0,0, width, height);
- 	}
+    Ball.prototype.is_colliding_with = function(other_ball) {
+      var dx, dy, r;
+      dx = this.x - other_ball.x;
+      dy = this.y - other_ball.y;
+      r = this.r + other_ball.r;
+      return dx * dx + dy * dy < r * r;
+    };
 
-	function begin() {
-		console.log("Initializing");
+    return Ball;
 
-		context = document.getElementById("canvas").getContext('2d');
-		var b = new Ball({
-			x: 100,
-			y: 110,
-			r: 30,
-			color: "blue",
-			weight: 20
-		});
+  })();
 
-		var b2 = new Ball({
-			x: 150,
-			y: 200,
-			r: 40,
-			color: "red",
-			weight: 40
-		});
-
-		allBalls = [b, b2];
-	}
-})();
+}).call(this);

@@ -110,8 +110,6 @@ class Animator
 					u1y = p1.y
 					u2x = p2.x
 					u2y = p2.y
-
-					center = other_ball.get_center()
 					
 					# Now we are in the new coordinate system where the collision
 					# will behave as in 1D, i.e. the balls are colliding in front
@@ -147,9 +145,6 @@ class Ball
 
 	clone: ->
 		new Ball( x: @x, y: @y, r: @r, w: @w, color: @color, vx: @vx, vy: @vy )
-
-	get_center: ->
-		new Point(@x+@r, @y+@r)
 
 	get_velocity: ->
 		Math.sqrt @vx*@vx + @vy*@vy

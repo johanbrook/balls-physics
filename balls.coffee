@@ -34,7 +34,7 @@ class Point
 # Helper functions
 
 create_balls = (amount) ->
-	new Ball( x: num*50, y: 30, r: num*15, w: num*10, vx: 10*(-1*num)) for num in [1..amount]
+	new Ball( x: num*60, y: 40, r: num*20, w: num*10, vx: 10*(-1*num)) for num in [1..amount]
 
 polar_to_rect = (len, degrees) ->
 	x = len * Math.cos degrees

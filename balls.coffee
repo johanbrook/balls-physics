@@ -11,6 +11,7 @@ config =
 	fps: 		60
 	number_of_balls: 2
 
+interval = 1000 / config.fps
 
 # Run
 
@@ -20,8 +21,6 @@ document.addEventListener 'DOMContentLoaded', (evt) ->
 
 	animator = new Animator(context, balls)
 	animator.go()
-
-
 
 # Helper classes
 
@@ -54,25 +53,15 @@ class Animator
 	constructor: (canvas, @balls) ->
 		@canvas = canvas.getContext("2d")
 		[@width, @height] = [canvas.width, canvas.height]
-		@timer = null
 
-	go: ->
-		interval = 1000 / config.fps
-
-		@timer = setInterval =>
-			@canvas.clearRect 0, 0, @width, @height
-
-			dt = 1 / interval
-			this.tick(dt)
-			this.draw()
-
-		, interval
-
-	stop: ->
-		clearInterval @timer
-		@timer = null
+	go: =>
+		window.requestAnimationFrame(this.go)
+		this.tick(1/interval)
+		this.draw()
 
 	draw: ->
+		@canvas.clearRect 0, 0, @width, @height
+
 		@balls.forEach (ball) =>
 			@canvas.beginPath()
 			@canvas.fillStyle = ball.color
@@ -81,7 +70,7 @@ class Animator
 			@canvas.fill()
 
 	tick: (dt) ->
-		console.log "In tick"
+
 		@balls.forEach (ball) =>
 			ball.vy = ball.vy + config.gravity * dt
 

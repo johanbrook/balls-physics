@@ -46,6 +46,9 @@ s4 = ->
 guid = ->
   s4() + s4() + '-' + s4() + '-' + s4() + '-' + s4() + '-' + s4() + s4() + s4()
 
+
+# Animator class
+
 class Animator
 
 	constructor: (canvas, @balls) ->
@@ -96,20 +99,14 @@ class Animator
 					# i.e. the polar coordinate components length and angle.
 					pp1 = ball.to_polar_point()
 					pp2 = other_ball.to_polar_point()
-					u1 = pp1.len
-					u2 = pp2.len
-					d1 = pp1.angle
-					d2 = pp2.angle
+					
+					[u1, u2, d1, d2] = [pp1.len, pp2.len, pp1.angle, pp2.angle]
 					
 					# Compute new coordinate system from the magnitude
 					# and direction/collision angle of the balls.
-					p1 = polar_to_rect(u1, d1-alpha)
-					p2 = polar_to_rect(u2, d2-alpha)
+					[p1, p2] = [polar_to_rect(u1, d1-alpha), polar_to_rect(u2, d2-alpha)]
 
-					u1x = p1.x
-					u1y = p1.y
-					u2x = p2.x
-					u2y = p2.y
+					[u1x, u1y, u2x, u2y] = [p1.x, p1.y, p2.x, p2.y]
 					
 					# Now we are in the new coordinate system where the collision
 					# will behave as in 1D, i.e. the balls are colliding in front
@@ -133,7 +130,8 @@ class Animator
 
 			ball.move(dt)
 
-# The ball class
+
+# Ball class
 
 class Ball 
 

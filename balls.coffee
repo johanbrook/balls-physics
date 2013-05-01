@@ -154,7 +154,7 @@ class Ball
 		new Point(@x+@r, @y+@r)
 
 	get_velocity: ->
-		Math.sqrt @vx*@vx, @vy*@vy
+		Math.sqrt @vx*@vx + @vy*@vy
 
 	get_direction: ->
 		Math.atan2 @vy, @vx

@@ -85,15 +85,21 @@ class Animator
 		@balls.forEach (ball) =>
 			ball.vy = ball.vy + config.gravity * dt
 
-			if ball.x < ball.r || ball.x > @width - ball.r
+			ghost_ball = ball.clone()
+			ghost_ball.move(dt)
+
+			if ghost_ball.x < ghost_ball.r or ghost_ball.x > @width - ghost_ball.r
 				ball.vx = ball.vx * -1
 
-			if ball.y < ball.r || ball.y > @height - ball.r
+			if ghost_ball.y < ghost_ball.r or ghost_ball.y > @height - ghost_ball.r
 				ball.vy = ball.vy * -1
 
 			@balls.forEach (other_ball) ->
+
+				ghost_ball = ball.clone()
+				ghost_ball.move(dt)
 				
-				if ball.id isnt other_ball.id and ball.is_colliding_with other_ball
+				if ball.id isnt other_ball.id and ghost_ball.is_colliding_with other_ball
 
 					# Calculate collision angle
 					alpha = Math.atan2 ball.y - other_ball.y, ball.x - other_ball.x
@@ -150,6 +156,9 @@ class Ball
 		[params.x, params.y, params.r, params.w, params.color or 'red', params.vx or 0, params.vy or 0]
 
 		@id = guid()
+
+	clone: ->
+		new Ball( x: @x, y: @y, r: @r, w: @w, color: @color, vx: @vx, vy: @vy )
 
 	get_center: ->
 		new Point(@x+@r, @y+@r)

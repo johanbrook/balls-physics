@@ -11,8 +11,6 @@ config =
 	fps: 		60
 	number_of_balls: 2
 
-interval = 1000 / config.fps
-
 # Run
 
 document.addEventListener 'DOMContentLoaded', (evt) ->
@@ -52,11 +50,12 @@ class Animator
 
 	constructor: (canvas, @balls) ->
 		@canvas = canvas.getContext("2d")
+		@interval = 1000 / config.fps
 		[@width, @height] = [canvas.width, canvas.height]
 
 	go: =>
 		window.requestAnimationFrame(this.go)
-		this.tick(1/interval)
+		this.tick(1/@interval)
 		this.draw()
 
 	draw: ->

@@ -93,8 +93,7 @@ class Animator
 
 			@balls.forEach (other_ball) ->
 				
-				if ball.id isnt other_ball.id 
-					and ball.is_colliding_with other_ball
+				if ball.id isnt other_ball.id and ball.is_colliding_with other_ball
 
 					# Calculate collision angle
 					alpha = Math.atan2 ball.y - other_ball.y, ball.x - other_ball.x

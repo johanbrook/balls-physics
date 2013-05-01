@@ -26,7 +26,7 @@ document.addEventListener 'DOMContentLoaded', (evt) ->
 # Helper classes
 
 class PolarPoint
-	constructor: (@length, @angle) ->
+	constructor: (@len, @angle) ->
 
 class Point
 	constructor: (@x, @y) ->
@@ -37,9 +37,9 @@ class Point
 create_balls = (amount) ->
 	new Ball( x: num*40, y: 30, r: num*15, w: num*10, vx: 10*(-1*num), vy: 15) for num in [1..amount]
 
-polar_to_rect = (length, degrees) ->
-	x = length * Math.cos degrees
-	y = length * Math.sin degrees
+polar_to_rect = (len, degrees) ->
+	x = len * Math.cos degrees
+	y = len * Math.sin degrees
 		
 	new Point(x, y)
 
@@ -103,8 +103,8 @@ class Animator
 					# i.e. the polar coordinate components length and angle.
 					pp1 = ball.to_polar_point()
 					pp2 = other_ball.to_polar_point()
-					u1 = pp1.length
-					u2 = pp2.length
+					u1 = pp1.len
+					u2 = pp2.len
 					d1 = pp1.angle
 					d2 = pp2.angle
 					

@@ -64,7 +64,7 @@ class Animator
 	draw: ->
 		@canvas.clearRect 0, 0, @width, @height
 
-		@balls.forEach (ball) =>
+		for ball in @balls
 			@canvas.beginPath()
 			@canvas.fillStyle = ball.color
 			@canvas.arc(ball.x, ball.y, ball.r, 0, Math.PI*2, true)
@@ -73,7 +73,7 @@ class Animator
 
 	tick: (dt) ->
 
-		@balls.forEach (ball) =>
+		for ball in @balls
 			ball.vy = ball.vy + config.gravity * dt
 
 			ghost_ball = ball.clone()
@@ -85,7 +85,7 @@ class Animator
 			if ghost_ball.y < ghost_ball.r or ghost_ball.y > @height - ghost_ball.r
 				ball.vy = ball.vy * -1
 
-			@balls.forEach (other_ball) ->
+			# ### Ball collisions
 
 				ghost_ball = ball.clone()
 				ghost_ball.move(dt)

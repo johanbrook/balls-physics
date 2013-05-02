@@ -1,5 +1,6 @@
 (function() {
-  var Animator, Ball, Point, PolarPoint, config, create_balls, guid, polar_to_rect, s4;
+  var Animator, Ball, Point, PolarPoint, config, create_balls, guid, polar_to_rect, s4,
+    __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
 
   config = {
     gravity: 9.82,
@@ -17,8 +18,8 @@
 
   PolarPoint = (function() {
 
-    function PolarPoint(length, angle) {
-      this.length = length;
+    function PolarPoint(len, angle) {
+      this.len = len;
       this.angle = angle;
     }
 
@@ -37,104 +38,66 @@
 
   })();
 
-  create_balls = function(amount) {
-    var num, _results;
-    _results = [];
-    for (num = 1; 1 <= amount ? num <= amount : num >= amount; 1 <= amount ? num++ : num--) {
-      _results.push(new Ball({
-        x: num * 40,
-        y: 30,
-        r: num * 15,
-        w: num * 10,
-        vx: 10 * (-1 * num),
-        vy: 15
-      }));
-    }
-    return _results;
-  };
-
-  polar_to_rect = function(length, degrees) {
-    var x, y;
-    x = length * Math.cos(degrees);
-    y = length * Math.sin(degrees);
-    return new Point(x, y);
-  };
-
-  s4 = function() {
-    return Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1);
-  };
-
-  guid = function() {
-    return s4() + s4() + '-' + s4() + '-' + s4() + '-' + s4() + '-' + s4() + s4() + s4();
-  };
-
   Animator = (function() {
 
     function Animator(canvas, balls) {
       var _ref;
       this.balls = balls;
+      this.go = __bind(this.go, this);
       this.canvas = canvas.getContext("2d");
+      this.interval = 1000 / config.fps;
       _ref = [canvas.width, canvas.height], this.width = _ref[0], this.height = _ref[1];
-      this.timer = null;
     }
 
     Animator.prototype.go = function() {
-      var interval,
-        _this = this;
-      interval = 1000 / config.fps;
-      return this.timer = setInterval(function() {
-        var dt;
-        _this.canvas.clearRect(0, 0, _this.width, _this.height);
-        dt = 1 / interval;
-        _this.tick(dt);
-        return _this.draw();
-      }, interval);
-    };
-
-    Animator.prototype.stop = function() {
-      clearInterval(this.timer);
-      return this.timer = null;
+      window.requestAnimationFrame(this.go);
+      this.tick(1 / this.interval);
+      return this.draw();
     };
 
     Animator.prototype.draw = function() {
-      var _this = this;
-      return this.balls.forEach(function(ball) {
-        _this.canvas.beginPath();
-        _this.canvas.fillStyle = ball.color;
-        _this.canvas.arc(ball.x, ball.y, ball.r, 0, Math.PI * 2, true);
-        _this.canvas.closePath();
-        return _this.canvas.fill();
-      });
+      var ball, _i, _len, _ref, _results;
+      this.canvas.clearRect(0, 0, this.width, this.height);
+      _ref = this.balls;
+      _results = [];
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        ball = _ref[_i];
+        this.canvas.beginPath();
+        this.canvas.fillStyle = ball.color;
+        this.canvas.arc(ball.x, ball.y, ball.r, 0, Math.PI * 2, true);
+        this.canvas.closePath();
+        _results.push(this.canvas.fill());
+      }
+      return _results;
     };
 
     Animator.prototype.tick = function(dt) {
-      var _this = this;
-      console.log("In tick");
-      return this.balls.forEach(function(ball) {
+      var alpha, ball, d1, d2, ghost_ball, other_ball, p1, p2, pp1, pp2, u1, u1x, u1y, u2, u2x, u2y, v1x, v1y, v2x, v2y, _i, _j, _len, _len2, _ref, _ref2, _ref3, _ref4, _ref5, _results;
+      _ref = this.balls;
+      _results = [];
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        ball = _ref[_i];
         ball.vy = ball.vy + config.gravity * dt;
-        if (ball.x < ball.r || ball.x > _this.width - ball.r) {
+        ghost_ball = ball.clone();
+        ghost_ball.move(dt);
+        if (ghost_ball.x < ghost_ball.r || ghost_ball.x > this.width - ghost_ball.r) {
           ball.vx = ball.vx * -1;
         }
-        if (ball.y < ball.r || ball.y > _this.height - ball.r) {
+        if (ghost_ball.y < ghost_ball.r || ghost_ball.y > this.height - ghost_ball.r) {
           ball.vy = ball.vy * -1;
         }
-        _this.balls.forEach(function(other_ball) {
-          var alpha, center, d1, d2, p1, p2, pp1, pp2, u1, u1x, u1y, u2, u2x, u2y, v1x, v1y, v2x, v2y;
-          if (ball.id !== other_ball.id && ball.is_colliding_with(other_ball)) {
+        _ref2 = this.balls;
+        for (_j = 0, _len2 = _ref2.length; _j < _len2; _j++) {
+          other_ball = _ref2[_j];
+          ghost_ball = ball.clone();
+          ghost_ball.move(dt);
+          if (ball.id !== other_ball.id && ghost_ball.is_colliding_with(other_ball)) {
             alpha = Math.atan2(ball.y - other_ball.y, ball.x - other_ball.x);
             pp1 = ball.to_polar_point();
             pp2 = other_ball.to_polar_point();
-            u1 = pp1.length;
-            u2 = pp2.length;
-            d1 = pp1.angle;
-            d2 = pp2.angle;
-            p1 = polar_to_rect(u1, d1 - alpha);
-            p2 = polar_to_rect(u2, d2 - alpha);
-            u1x = p1.x;
-            u1y = p1.y;
-            u2x = p2.x;
-            u2y = p2.y;
-            center = other_ball.get_center();
+            _ref3 = [pp1.len, pp2.len, pp1.angle, pp2.angle], u1 = _ref3[0], u2 = _ref3[1], d1 = _ref3[2], d2 = _ref3[3];
+            _ref4 = [polar_to_rect(u1, d1 - alpha), polar_to_rect(u2, d2 - alpha)], p1 = _ref4[0], p2 = _ref4[1];
+            _ref5 = [p1.x, p1.y, p2.x, p2.y], u1x = _ref5[0], u1y = _ref5[1], u2x = _ref5[2], u2y = _ref5[3];
             v1x = (u1x * (ball.w - other_ball.w) + 2 * other_ball.w * u2x) / (ball.w + other_ball.w);
             v2x = (u2x * (other_ball.w - ball.w) + 2 * ball.w * u1x) / (ball.w + other_ball.w);
             v1y = u1y;
@@ -142,11 +105,12 @@
             ball.vx = Math.cos(alpha) * v1x + Math.cos(alpha + Math.PI / 2) * v1y;
             ball.vy = Math.sin(alpha) * v1x + Math.sin(alpha + Math.PI / 2) * v1y;
             other_ball.vx = Math.cos(alpha) * v2x + Math.cos(alpha + Math.PI / 2) * v2y;
-            return other_ball.vy = Math.sin(alpha) * v2x + Math.sin(alpha + Math.PI / 2) * v2y;
+            other_ball.vy = Math.sin(alpha) * v2x + Math.sin(alpha + Math.PI / 2) * v2y;
           }
-        });
-        return ball.move(dt);
-      });
+        }
+        _results.push(ball.move(dt));
+      }
+      return _results;
     };
 
     return Animator;
@@ -161,12 +125,20 @@
       this.id = guid();
     }
 
-    Ball.prototype.get_center = function() {
-      return new Point(this.x + this.r, this.y + this.r);
+    Ball.prototype.clone = function() {
+      return new Ball({
+        x: this.x,
+        y: this.y,
+        r: this.r,
+        w: this.w,
+        color: this.color,
+        vx: this.vx,
+        vy: this.vy
+      });
     };
 
     Ball.prototype.get_velocity = function() {
-      return Math.sqrt(this.vx * this.vx, this.vy * this.vy);
+      return Math.sqrt(this.vx * this.vx + this.vy * this.vy);
     };
 
     Ball.prototype.get_direction = function() {
@@ -193,5 +165,35 @@
     return Ball;
 
   })();
+
+  create_balls = function(amount) {
+    var num, _results;
+    _results = [];
+    for (num = 1; 1 <= amount ? num <= amount : num >= amount; 1 <= amount ? num++ : num--) {
+      _results.push(new Ball({
+        x: num * 60,
+        y: 40,
+        r: num * 20,
+        w: num * 10,
+        vx: 10 * (-1 * num)
+      }));
+    }
+    return _results;
+  };
+
+  polar_to_rect = function(len, degrees) {
+    var x, y;
+    x = len * Math.cos(degrees);
+    y = len * Math.sin(degrees);
+    return new Point(x, y);
+  };
+
+  s4 = function() {
+    return Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1);
+  };
+
+  guid = function() {
+    return s4() + s4() + '-' + s4() + '-' + s4() + '-' + s4() + '-' + s4() + s4() + s4();
+  };
 
 }).call(this);

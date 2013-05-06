@@ -50,7 +50,7 @@ class Animator
 		@interval = 1000 / config.fps
 		[@width, @height] = [canvas.width, canvas.height]
 
-	# Start the animation. 
+	# Init function for the animator. Will start animating (updating and drawing) the scene.
 	go: =>
 		# Request a frame, with `go` as its own callback.
 		window.requestAnimationFrame(this.go)
@@ -74,6 +74,9 @@ class Animator
 	tick: (dt) ->
 
 		for ball in @balls
+
+			# ### Gravity
+
 			# Firstly, update the ball's vertical gravity by setting a new
 			# vertical velocity from the gravity config variable.
 			ball.vy = ball.vy + config.gravity * dt
@@ -217,6 +220,6 @@ polar_to_rect = (len, degrees) ->
 s4 = ->
   Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1)
 
-# Generate a unique GUID.
+# Generate a unique object ID for comparisons.
 guid = ->
   s4() + s4() + '-' + s4() + '-' + s4() + '-' + s4() + '-' + s4() + s4() + s4()

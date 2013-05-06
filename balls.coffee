@@ -143,11 +143,11 @@ class Animator
 
 					# Convert back to Cartesian coords. PI / 2 is for shifting the direction
 					# 90 degrees, since the X and Y axis are perpendicular. 
-					ball.vx = Math.cos(alpha) * v1x + Math.cos(alpha + Math.PI / 2) * v1y
-					ball.vy = Math.sin(alpha) * v1x + Math.sin(alpha + Math.PI / 2) * v1y
+					ball.vx = polar_to_rect(v1x, alpha).x + polar_to_rect(v1y, alpha + Math.PI / 2).x
+					ball.vy = polar_to_rect(v1x, alpha).y + polar_to_rect(v1y, alpha + Math.PI / 2).y
 					
-					other_ball.vx = Math.cos(alpha) * v2x + Math.cos(alpha + Math.PI / 2) * v2y
-					other_ball.vy = Math.sin(alpha) * v2x + Math.sin(alpha + Math.PI / 2) * v2y
+					other_ball.vx = polar_to_rect(v2x, alpha).x + polar_to_rect(v2y, alpha + Math.PI / 2).x
+					other_ball.vy = polar_to_rect(v2x, alpha).y + polar_to_rect(v2y, alpha + Math.PI / 2).y
 
 			# Lastly, move the ball. This will update it's coordinates according 
 			# to the newly set velocities.

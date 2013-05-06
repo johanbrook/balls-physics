@@ -102,10 +102,10 @@
             v2x = (u2x * (other_ball.w - ball.w) + 2 * ball.w * u1x) / (ball.w + other_ball.w);
             v1y = u1y;
             v2y = u2y;
-            ball.vx = Math.cos(alpha) * v1x + Math.cos(alpha + Math.PI / 2) * v1y;
-            ball.vy = Math.sin(alpha) * v1x + Math.sin(alpha + Math.PI / 2) * v1y;
-            other_ball.vx = Math.cos(alpha) * v2x + Math.cos(alpha + Math.PI / 2) * v2y;
-            other_ball.vy = Math.sin(alpha) * v2x + Math.sin(alpha + Math.PI / 2) * v2y;
+            ball.vx = polar_to_rect(v1x, alpha).x + polar_to_rect(v1y, alpha + Math.PI / 2).x;
+            ball.vy = polar_to_rect(v1x, alpha).y + polar_to_rect(v1y, alpha + Math.PI / 2).y;
+            other_ball.vx = polar_to_rect(v2x, alpha).x + polar_to_rect(v2y, alpha + Math.PI / 2).x;
+            other_ball.vy = polar_to_rect(v2x, alpha).y + polar_to_rect(v2y, alpha + Math.PI / 2).y;
           }
         }
         _results.push(ball.move(dt));

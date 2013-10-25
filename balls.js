@@ -202,7 +202,3 @@
   };
 
 }).call(this);
-
-/*
-//@ sourceMappingURL=balls.map
-*/
